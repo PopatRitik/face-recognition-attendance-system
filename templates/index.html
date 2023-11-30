@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition App</title>
+</head>
+
+<body>
+    <h1>Welcome to the Face Recognition App</h1>
+
+    <form action="/add_face" method="post">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="id">ID:</label>
+        <input type="text" id="id" name="id" required>
+
+        <button type="submit">Add Face</button>
+    </form>
+
+    <br>
+
+    <a href="/detect_faces">Start Face Detection</a>
+    <br>
+    <table border="1">
+        <tr>
+            <th>Name</th>
+            <th>ID</th>
+            <th>Timestamp</th>
+        </tr>
+        {% for entry in data %}
+        <tr>
+            <td>{{ entry["Name"] }}</td>
+            <td>{{ entry["ID"] }}</td>
+            <td>{{ entry["Timestamp"] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+
+</html>
+
+
+C:\Users\Ritik\Downloads\face_rec_attendance-main\face_rec_attendance-main\templates\index.html
