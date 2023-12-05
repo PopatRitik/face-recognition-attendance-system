@@ -19,6 +19,7 @@ suspected_ids = set()  # Set to store IDs with a frequency of 7
 faces_folder = "faces"
 attendance_folder = "attendance_logs"
 
+
 def write_attendance_log(date_str, log_entries):
     csv_file_path = os.path.join(
         attendance_folder, f"attendance_{date_str}.csv")
@@ -28,7 +29,7 @@ def write_attendance_log(date_str, log_entries):
 
     # Open the CSV file in append mode (a) if it exists, otherwise in write mode (w)
     with open(csv_file_path, 'a' if file_exists else 'w', newline='') as csvfile:
-        fieldnames = ["Name", "ID", "Timestamp"]
+        fieldnames = ["Name", "ID", "Timestamp", "MatchPercent"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         # If the file doesn't exist, write the header
@@ -38,6 +39,7 @@ def write_attendance_log(date_str, log_entries):
         # Write the log entries
         for entry in log_entries:
             writer.writerow(entry)
+
 
 def is_id_in_csv(date_str, user_id):
     suspected_ids = set()
@@ -55,6 +57,8 @@ def is_id_in_csv(date_str, user_id):
         return 0
 
 # Load known faces from the "faces" folder
+
+
 def load_known_faces():
     known_names.clear()
     known_name_encodings.clear()
@@ -69,9 +73,12 @@ def load_known_faces():
             encoding = fr.face_encodings(image)[0]
             known_name_encodings.append(encoding)
 
+
 date_str = datetime.datetime.now().strftime("%Y-%m-%d")
 
 # Function to capture a frame from the webcam and perform face detection
+
+
 def detect_faces():
     video_capture = cv2.VideoCapture(0)
 
@@ -94,13 +101,15 @@ def detect_faces():
         for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
             matches = fr.compare_faces(known_name_encodings, face_encoding)
             name = "Unknown"
+            face_distance_percent = None  # Set face_distance_percent to None for unknown faces
 
-            face_distances = fr.face_distance(
-                known_name_encodings, face_encoding)
-            best_match = np.argmin(face_distances)
-
-            if matches[best_match]:
-                name = known_names[best_match]
+            if any(matches):
+                face_distances = fr.face_distance(
+                    known_name_encodings, face_encoding)
+                best_match_index = np.argmin(face_distances)
+                face_distance_percent = (
+                    1 - face_distances[best_match_index]) * 100
+                name = known_names[best_match_index]
 
                 # Update frequency map for the detected ID
                 user_id = name.split('_')[1]
@@ -109,12 +118,12 @@ def detect_faces():
 
                 # Check if the frequency for a particular ID hits 7
                 if id_frequency_map.get(user_id, 0) == 7:
-                    if is_id_in_csv(date_str, user_id)==1:
+                    if is_id_in_csv(date_str, user_id) == 1:
                         pass
                     else:
                         # Write attendance log entry to CSV file
                         log_entry = {"Name": name, "ID": user_id, "Timestamp": datetime.datetime.now(
-                        ).strftime("%Y-%m-%d %H:%M:%S")}
+                        ).strftime("%Y-%m-%d %H:%M:%S"), "MatchPercent": face_distance_percent}
                         attendance_log.append(log_entry)
                         write_attendance_log(date_str, [log_entry])
 
@@ -133,7 +142,17 @@ def detect_faces():
                     cv2.rectangle(frame, (left, bottom - 15),
                                   (right, bottom), (0, 0, 255), cv2.FILLED)
                 font = cv2.FONT_HERSHEY_DUPLEX
-                cv2.putText(frame, name, (left + 6, bottom - 6),
+                cv2.putText(frame, f"{name} ({face_distance_percent:.2f}%)",
+                            (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+            else:
+                # For unknown faces, you can choose to perform any specific action
+                # For example, you might want to mark them differently in the display
+                cv2.rectangle(frame, (left, top),
+                              (right, bottom), (128, 128, 128), 2)
+                cv2.rectangle(frame, (left, bottom - 15),
+                              (right, bottom), (128, 128, 128), cv2.FILLED)
+                font = cv2.FONT_HERSHEY_DUPLEX
+                cv2.putText(frame, "Unknown", (left + 6, bottom - 6),
                             font, 1.0, (255, 255, 255), 1)
 
         # Display the resulting frame
@@ -147,12 +166,14 @@ def detect_faces():
     video_capture.release()
     cv2.destroyAllWindows()
 
+
 # Route for home page with real-time data
 @app.route('/')
 def home():
     # Read CSV file data
     date_str = datetime.datetime.now().strftime("%Y-%m-%d")
-    csv_file_path = os.path.join(attendance_folder, f"attendance_{date_str}.csv")
+    csv_file_path = os.path.join(
+        attendance_folder, f"attendance_{date_str}.csv")
 
     data = []
     if os.path.exists(csv_file_path):
@@ -164,6 +185,7 @@ def home():
     return render_template('index.html', data=data)
 
 # Route to add faces for training
+
 
 @app.route('/add_face', methods=['POST'])
 def add_face():
@@ -191,6 +213,8 @@ def add_face():
     return redirect(url_for('home'))
 
 # Route to start face detection
+
+
 @app.route('/detect_faces')
 def detect_faces_route():
     detect_faces()
@@ -201,6 +225,7 @@ def detect_faces_route():
 
     return redirect(url_for('home'))
 
+
 if __name__ == '__main__':
     # Create the "faces" folder and "attendance_logs" folder if they don't exist
     if not os.path.exists(faces_folder):
@@ -209,5 +234,3 @@ if __name__ == '__main__':
         os.makedirs(attendance_folder)
 
     app.run(debug=True)
-
-
