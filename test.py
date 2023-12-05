@@ -40,6 +40,8 @@ def write_attendance_log(date_str, log_entries):
         for entry in log_entries:
             writer.writerow(entry)
 
+    id_frequency_map.clear()
+
 
 def is_id_in_csv(date_str, user_id):
     suspected_ids = set()
@@ -115,7 +117,7 @@ def detect_faces():
                 user_id = name.split('_')[1]
                 id_frequency_map[user_id] = id_frequency_map.get(
                     user_id, 0) + 1
-
+                print(id_frequency_map[user_id], user_id)
                 # Check if the frequency for a particular ID hits 7
                 if id_frequency_map.get(user_id, 0) == 7:
                     if is_id_in_csv(date_str, user_id) == 1:
