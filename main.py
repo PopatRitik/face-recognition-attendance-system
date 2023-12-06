@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
+import mysql.connector
 import cv2
 import face_recognition as fr
 import numpy as np
@@ -8,6 +9,13 @@ import csv
 import requests
 
 app = Flask(__name__)
+
+db_config = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': 'mynameispopat12345!@#$%',
+    'database': 'face_recognition_db'
+}
 
 # Initialize variables for face recognition and attendance tracking
 known_names = []
@@ -19,6 +27,25 @@ suspected_ids = set()  # Set to store IDs with a frequency of 7
 # Folder to save captured faces and attendance
 faces_folder = "faces"
 attendance_folder = "attendance_logs"
+
+
+def add_face_to_database(face_id, name, chat_id, image_name):
+    try:
+        # Establish a connection to the MySQL database
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+
+        # Insert face data into the faces table
+        query = "INSERT INTO faces (id, name, chat_id, user_id) VALUES (%s, %s, %s, %s)"
+        values = (face_id, name, chat_id, image_name)
+        cursor.execute(query, values)
+
+        # Commit the changes and close the connection
+        connection.commit()
+        cursor.close()
+        connection.close()
+    except Exception as e:
+        print(f"Error adding face to the database: {e}")
 
 
 def write_attendance_log(date_str, log_entries):
@@ -43,22 +70,25 @@ def write_attendance_log(date_str, log_entries):
 
     id_frequency_map.clear()
 
+
 telegram_bot_token = '6728316261:AAHRd_lopYRyqKtVWvyW-ACtgnj1ptB1UO0'
 
 # Telegram API URL for sending messages
 telegram_api_url = f'https://api.telegram.org/bot{telegram_bot_token}/sendMessage'
 
+
 def send_telegram_message(chat_id, message):
     """
     Function to send a message to the Telegram Bot API.
     """
+    print(message)
     params = {
         'chat_id': chat_id,
         'text': message
     }
     response = requests.post(telegram_api_url, params=params)
-    print(response)
     return response.json()
+
 
 def is_id_in_csv(date_str, user_id):
     suspected_ids = set()
@@ -93,7 +123,62 @@ def load_known_faces():
             known_name_encodings.append(encoding)
 
 
-date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+date_str = datetime.datetime.now().strftime("%d-%m-%Y")
+time_str = datetime.datetime.now().strftime("%H:%M")
+
+
+def get_chat_id_by_user_id(user_id):
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+    # cursor.execute("SELECT chat_id FROM faces WHERE user_id = ?", (user_id,))
+
+    print(user_id)
+    query1 = "SELECT chat_id FROM faces WHERE user_id=%s"
+    values1 = (user_id,)
+    cursor.execute(query1, values1)
+
+    result = cursor.fetchone()
+
+    if result:
+        return result[0]
+    else:
+        return None
+
+
+def get_face_id_by_user_id(user_id):
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+    # cursor.execute("SELECT chat_id FROM faces WHERE user_id = ?", (user_id,))
+
+    print(user_id)
+    query1 = "SELECT id FROM faces WHERE user_id=%s"
+    values1 = (user_id,)
+    cursor.execute(query1, values1)
+
+    result = cursor.fetchone()
+
+    if result:
+        return result[0]
+    else:
+        return None
+
+
+def get_name_by_user_id(user_id):
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+    # cursor.execute("SELECT chat_id FROM faces WHERE user_id = ?", (user_id,))
+
+    print(user_id)
+    query1 = "SELECT name FROM faces WHERE user_id=%s"
+    values1 = (user_id,)
+    cursor.execute(query1, values1)
+
+    result = cursor.fetchone()
+
+    if result:
+        return result[0]
+    else:
+        return None
 
 # Function to capture a frame from the webcam and perform face detection
 
@@ -144,13 +229,15 @@ def detect_faces(chat_id):
                         ).strftime("%Y-%m-%d %H:%M:%S"), "MatchPercent": face_distance_percent}
                         attendance_log.append(log_entry)
                         write_attendance_log(date_str, [log_entry])
-                        # chat_id = entry.get('ChatID')  # Assuming there is a 'ChatID' field in the log entry
-                        message = f"New attendance entry: {name} {user_id}"
-                        print("message:", message)
-                        print("params:", chat_id, message)
-                        response = send_telegram_message(chat_id, message)
-                        print("response:", response)
                         # Reset the frequency for this ID in the map
+                        chat_id = get_chat_id_by_user_id(name)
+                        name1 = get_name_by_user_id(name)
+                        face_id1 = get_face_id_by_user_id(name)
+                        # Corrected line
+                        message = ("Hello " + name1 + "("+face_id1 + "), Your 📅 attendance has been marked for date : " 
+                                  + date_str + " at time:"+time_str+". Good Day Ahead!👍")
+
+                        send_telegram_message(chat_id, message)
                         id_frequency_map[user_id] = 0
 
                 # Check if the ID is in the CSV file for the current date
@@ -208,6 +295,8 @@ def home():
     return render_template('index.html', data=data)
 
 # Route to add faces for training
+
+
 @app.route('/add_face', methods=['POST'])
 def add_face():
     global known_names, known_name_encodings
@@ -223,8 +312,12 @@ def add_face():
 
     # Save the captured face image
     image_name = f"{name}_{face_id}.jpg"
+    image_name1 = f"{name}_{face_id}"
     image_path = os.path.join(faces_folder, image_name)
     cv2.imwrite(image_path, frame)
+
+    # Add face data to the MySQL database
+    add_face_to_database(face_id, name, chat_id, image_name1)
 
     # Load known faces from the "faces" folder
     load_known_faces()
@@ -249,7 +342,6 @@ def detect_faces_route():
     write_attendance_log(date_str, attendance_log)
 
     return redirect(url_for('home'))
-
 
 
 if __name__ == '__main__':
