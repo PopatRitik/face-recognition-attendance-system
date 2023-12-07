@@ -118,9 +118,7 @@ def load_known_faces():
             known_name_encodings.append(encoding)
 
 
-date_str1 = datetime.datetime.now().strftime("%d-%m-%Y")
 date_str = datetime.datetime.now().strftime("%Y-%m-%d")
-time_str = datetime.datetime.now().strftime("%H:%M")
 
 
 def get_chat_id_by_user_id(user_id):
@@ -219,6 +217,8 @@ def detect_faces(chat_id):
                         name1 = get_name_by_user_id(name)
                         face_id1 = get_face_id_by_user_id(name)
                         # Corrected line
+                        time_str = datetime.datetime.now().strftime("%H:%M")
+                        date_str1 = datetime.datetime.now().strftime("%d-%m-%Y")
                         message = ("Hello " + name1 + "("+face_id1 + "), Your 📅 attendance has been marked for date : " 
                                   + date_str1 + " at time:"+time_str+". Good Day Ahead!👍")
 
