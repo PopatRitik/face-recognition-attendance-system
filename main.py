@@ -72,8 +72,6 @@ def write_attendance_log(date_str, log_entries):
 
 
 telegram_bot_token = '6728316261:AAHRd_lopYRyqKtVWvyW-ACtgnj1ptB1UO0'
-
-# Telegram API URL for sending messages
 telegram_api_url = f'https://api.telegram.org/bot{telegram_bot_token}/sendMessage'
 
 
@@ -81,7 +79,6 @@ def send_telegram_message(chat_id, message):
     """
     Function to send a message to the Telegram Bot API.
     """
-    print(message)
     params = {
         'chat_id': chat_id,
         'text': message
@@ -106,8 +103,6 @@ def is_id_in_csv(date_str, user_id):
         return 0
 
 # Load known faces from the "faces" folder
-
-
 def load_known_faces():
     known_names.clear()
     known_name_encodings.clear()
@@ -123,16 +118,14 @@ def load_known_faces():
             known_name_encodings.append(encoding)
 
 
-date_str = datetime.datetime.now().strftime("%d-%m-%Y")
+date_str1 = datetime.datetime.now().strftime("%d-%m-%Y")
+date_str = datetime.datetime.now().strftime("%Y-%m-%d")
 time_str = datetime.datetime.now().strftime("%H:%M")
 
 
 def get_chat_id_by_user_id(user_id):
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor()
-    # cursor.execute("SELECT chat_id FROM faces WHERE user_id = ?", (user_id,))
-
-    print(user_id)
     query1 = "SELECT chat_id FROM faces WHERE user_id=%s"
     values1 = (user_id,)
     cursor.execute(query1, values1)
@@ -148,9 +141,6 @@ def get_chat_id_by_user_id(user_id):
 def get_face_id_by_user_id(user_id):
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor()
-    # cursor.execute("SELECT chat_id FROM faces WHERE user_id = ?", (user_id,))
-
-    print(user_id)
     query1 = "SELECT id FROM faces WHERE user_id=%s"
     values1 = (user_id,)
     cursor.execute(query1, values1)
@@ -166,9 +156,6 @@ def get_face_id_by_user_id(user_id):
 def get_name_by_user_id(user_id):
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor()
-    # cursor.execute("SELECT chat_id FROM faces WHERE user_id = ?", (user_id,))
-
-    print(user_id)
     query1 = "SELECT name FROM faces WHERE user_id=%s"
     values1 = (user_id,)
     cursor.execute(query1, values1)
@@ -181,8 +168,6 @@ def get_name_by_user_id(user_id):
         return None
 
 # Function to capture a frame from the webcam and perform face detection
-
-
 def detect_faces(chat_id):
     video_capture = cv2.VideoCapture(0)
 
@@ -235,7 +220,7 @@ def detect_faces(chat_id):
                         face_id1 = get_face_id_by_user_id(name)
                         # Corrected line
                         message = ("Hello " + name1 + "("+face_id1 + "), Your 📅 attendance has been marked for date : " 
-                                  + date_str + " at time:"+time_str+". Good Day Ahead!👍")
+                                  + date_str1 + " at time:"+time_str+". Good Day Ahead!👍")
 
                         send_telegram_message(chat_id, message)
                         id_frequency_map[user_id] = 0
