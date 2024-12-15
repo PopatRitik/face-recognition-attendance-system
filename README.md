@@ -39,6 +39,5 @@ This project is a Flask-based system for real-time face detection, recognition, 
 ![Dev Parmar](https://github.com/Spy-boy-07.png?size=60) **[Dev Parmar](https://github.com/Spy-boy-07)** - *Project Creator* <br>
 ![Ritik Popat](https://github.com/PopatRitik.png?size=60) **[Ritik Popat](https://github.com/PopatRitik)** - *Database Handling* <br>
 <img src="https://github.com/hetparmar30.png?size=100" width="50" height="50"> **[Het Parmar](https://github.com/hetparmar30)**  
-<img src="https://github.com/jennybhut14.png?size=100" width="50" height="50">  **[Jenny Bhut](https://github.com/jennybhut14)** 
-<img src="https://github.com/ayusagarwal?size=100" width="50" height="50">  **[Jenny Bhut](https://github.com/ayusagarwal)** 
-
+<img src="https://github.com/jennybhut14.png?size=100" width="50" height="50">  **[Jenny Bhut](https://github.com/jennybhut14)**  
+<img src="https://github.com/ayusagarwal?size=100" width="50" height="50">  **[Ayush Agarwal](https://github.com/ayusagarwal)** 
